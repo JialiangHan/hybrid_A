@@ -1,0 +1,12 @@
+function [pot1 pot2] = findtan(c1, c2)
+% this function find tan line on two circle, return two points
+%data structure for c1,c2, c1=[x y r]=c2;
+  v1=c1(1:2)-c2(1:2);
+  D=norm(v1,2);%distance
+  v1=v1/D;%normilazition
+  c=(c2(3)-c1(3))/D;%angle
+  nx=v1(1)*c-v1(2)*sqrt(1-c^2);
+  ny=v1(1)*sqrt(1-c^2)+v1(2)*c;
+  pot1=[c1(1)+c1(3)*nx c1(2)+c1(3)*ny];
+  pot2=[c2(1)+c2(3)*nx c2(2)+c2(3)*ny];
+ end
