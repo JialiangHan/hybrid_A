@@ -1,0 +1,26 @@
+%this is a matlab code to calcaluate arc length between two point.
+
+function length = calarclength(start,endpoint,center,direction)
+	%data structure:
+	%start=[x y], endpoint=[x y],center[x y], direction='left' or 'right'
+	
+	%first step, calcalute arc radius
+	v1 = start - center;
+	v2 = endpoint - center;
+	r = norm(v1);
+	
+	%calculate vector angle
+	theta1 = atan2(v1(2),v1(1));
+	theta2 = atan2(v2(2),v2(1));
+	
+	theta = theta2 - theta1;
+	
+	if theta<0 && strcmp(direction,'left')
+		theta = theta + 2*pi;
+	elseif theta > 0 && strcmp(directoin, 'right')
+		theta = theta - 2*pi
+	end
+	
+	length = r* abs(theta);
+	
+end
