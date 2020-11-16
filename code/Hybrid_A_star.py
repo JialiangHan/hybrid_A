@@ -12,7 +12,7 @@ class State:
         self.yd = y
         self.thetad= theta
         self.h = 0
-        self.g = 10000
+        self.g = 0
         self.parent = None
         self.children = []
         self.isobstacle = False
@@ -25,15 +25,16 @@ class State:
         if self.isobstacle == True or current.isobstacle == True:
             return 10000
         else:
-            return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2 + (self.thetad - current.thetad))
+            return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2 + (self.thetad - current.thetad)**2)
 
-    def euclidean(self,goal):
-        return math.sqrt((self.xd - goal.x) ** 2 + (self.yd - goal.y) ** 2)
+    def euclidean(self,current):
+        return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2 + (self.thetad - current.thetad)**2)
 
     def successor(self,goal):
-        steering = ['left', 'right']
+        steering = ['left', 'straight','right']
         gear = ['drive','reverse']
-
+        max_x = 7
+        max_y = 6
         for direction in steering:
             for g in gear:
                 if direction == 'left':
@@ -42,18 +43,24 @@ class State:
                     d = -1
                 else:
                     d = 0
-                if g == 'd':
+                if g == 'drive':
                     w = 1
                 else:
                     w = -1
                 a = State(self.x,self.y,self.theta)
                 a.thetad = self.theta + d * self.deltatheta
-                a.xd = self.x + w * self.speed * math.cos(self.thetad)
-                a.yd = self.y + w * self.speed * math.sin(self.thetad)
-                a.g = self.g + self.cost(a)
-                a.heuristic(goal)
-                a.roundstate()
-                self.children.append(a)
+                tempx = self.x + w * self.speed * math.cos(a.thetad)
+                tempy = self.y + w * self.speed * math.sin(a.thetad)
+                if 0 <= tempx <= max_x and 0 <= tempy <= max_y:
+                    a.xd = tempx
+                    a.yd = tempy
+                    a.g = self.g + self.cost(a)
+                    a.heuristic(goal)
+                    a.roundstate()
+                    if a.x == goal.x and a.y == goal.y:
+                        a.isgoal = True
+                    a.parent = self
+                    self.children.append(a)
 
     def roundstate(self):
         self.x = math.floor(self.xd)
@@ -70,22 +77,27 @@ class Astar:
 
     def run(self, start ,goal):
         self.openlist.add(start)
-        start.h = start.heuristic(goal)
+        start.heuristic(goal)
         while True:
             current = self.min_state()
-            self.openlist.remove(start)
-            self.closelist.add(start)
+            if current == -1:
+                break
+            current.successor(goal)
+            self.openlist.remove(current)
+            self.closelist.add(current)
 
             if current.isgoal:
                 break
             for child in current.children:
-                if child in self.closelist:
-                    continue
-                if child not in self.openlist:
-                    self.openlist.add(child)
-                elif child.g > current.g + current.cost(child):
-                    child.g = current.g +  current.cost(child)
-                    child.parent = current
+                if not self.exist(child,self.closelist):
+                    g = current.g + child.cost(current)
+                    if (not self.exist(child,self.openlist)) or g < child.g:
+                        child.parent = current
+                        child.g = g
+                        child.heuristic(goal)
+                        if not self.exist(child, self.openlist):
+                            self.openlist.add(child)
+
         self.get_backpointer_list(goal,start)
 
     def get_backpointer_list(self,current, start):
@@ -104,14 +116,20 @@ class Astar:
         else:
             return min(self.openlist, key=lambda x: x.g+x.h)
 
+    def exist(self,current,list):
+        for n in list:
+            if n.x == current.x and n.y == current.y and n.theta == current.theta:
+                return True
+
+
 max_x = 7
 max_y = 6
 state = [[State(j, i,0) for i in range(max_x)] for j in range(max_y)]
 plt.title("A star")
 state[1][3].isstart = True # set start point
 state[5][3].isgoal = True  # set goal point
-S = state[2][1]
-G = state[5][5]
+S = state[1][3]
+G = state[5][3]
 obstaclelist = [ [3, 3], [4, 3]]
 startTime = time.time()
 astar = Astar()
