@@ -24,11 +24,16 @@ class State:
     def cost(self, current):
         if self.isobstacle == True or current.isobstacle == True:
             return 10000
-        else:
-            return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2 + (self.thetad - current.thetad)**2)
+        elif (math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi: #drive:
+            return 1 * self.arclenth(self.current) + self.deltaangle(self, current)
+        else:#reverse
+            return 2 * self.arclenth(self.current) + self.deltaangle(self, current)
 
-    def euclidean(self,current):
-        return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2 + (self.thetad - current.thetad)**2)
+    def arclength(self,current):
+        return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2)
+
+    def deltaangle(self,current):
+        return abs(self.thetad - current.thetad)
 
     def successor(self,goal):
         steering = ['left', 'straight','right']
