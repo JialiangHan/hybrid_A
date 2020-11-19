@@ -19,8 +19,8 @@ class State:
         self.isobstacle = False
         self.isstart = False
         self.isgoal = False
-        self.speed = 0.5
-        self.deltatheta = 0.1
+        self.speed = 1
+        self.deltatheta = 0.2
 
     def cost(self, current):
         if self.isobstacle == True or current.isobstacle == True:
@@ -117,7 +117,7 @@ class Astar:
                             if not self.exist(child, self.openlist):
                                 self.openlist.add(child)
 
-        self.get_backpointer_list(goal, start)
+        self.get_backpointer_list(current, start)
 
     def get_backpointer_list(self, current, start):
         self.path = [current]
