@@ -3,6 +3,7 @@ import time
 from matplotlib import pyplot as plt
 import numpy as np
 
+
 class State:
     def __init__(self, x, y, theta):
         self.x = x
@@ -10,7 +11,7 @@ class State:
         self.theta = theta
         self.xd = x
         self.yd = y
-        self.thetad= theta
+        self.thetad = theta
         self.h = 0
         self.g = 0
         self.parent = None
@@ -24,27 +25,30 @@ class State:
     def cost(self, current):
         if self.isobstacle == True or current.isobstacle == True:
             return 10000
-        elif (math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi: #drive:
-            return 1 * self.arclenth(self.current) + self.deltaangle(self, current)
-        else:#reverse
-            return 2 * self.arclenth(self.current) + self.deltaangle(self, current)
+        elif (math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi:  # drive
+            return 1 * self.arclength(current) + self.deltaangle( current)
+        else:  # reverse
+            return 2 * self.arclength(current) + self.deltaangle(current)
 
-    def arclength(self,current):
+    def arclength(self, current):
         return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2)
 
-    def deltaangle(self,current):
+    def deltaangle(self, current):
         return abs(self.thetad - current.thetad)
 
-    def successor(self,goal):
-        steering = ['left', 'straight','right']
-        gear = ['drive','reverse']
+    def heuristic(self, goal):
+        self.h = self.arclength(goal) + self.deltaangle(goal)
+
+    def successor(self, goal):
+        steering = ['left', 'straight', 'right']
+        gear = ['drive', 'reverse']
         max_x = 7
         max_y = 6
         for direction in steering:
             for g in gear:
                 if direction == 'left':
                     d = 1
-                elif direction == 'right' :
+                elif direction == 'right':
                     d = -1
                 else:
                     d = 0
@@ -52,7 +56,7 @@ class State:
                     w = 1
                 else:
                     w = -1
-                a = State(self.x,self.y,self.theta)
+                a = State(self.x, self.y, self.theta)
                 a.thetad = self.theta + d * self.deltatheta
                 tempx = self.x + w * self.speed * math.cos(a.thetad)
                 tempy = self.y + w * self.speed * math.sin(a.thetad)
@@ -71,16 +75,14 @@ class State:
         self.x = math.floor(self.xd)
         self.y = math.floor(self.yd)
 
-    def heuristic(self,goal):
-        self.h = self.euclidean(goal)
 
 class Astar:
     def __init__(self):
         self.openlist = set()
         self.closelist = set()
-        self.path =[]
+        self.path = []
 
-    def run(self, start ,goal):
+    def run(self, start, goal):
         self.openlist.add(start)
         start.heuristic(goal)
         while True:
@@ -93,19 +95,31 @@ class Astar:
 
             if current.isgoal:
                 break
-            for child in current.children:
-                if not self.exist(child,self.closelist):
-                    g = current.g + child.cost(current)
-                    if (not self.exist(child,self.openlist)) or g < child.g:
-                        child.parent = current
-                        child.g = g
-                        child.heuristic(goal)
-                        if not self.exist(child, self.openlist):
-                            self.openlist.add(child)
+            else:
+                for child in current.children:
+                    if child.x == current.x and child.y == current.y:  # if child and current are in same cell
+                        g = current.g + child.cost(current)
+                        # if g + child.h > current.g + current.h + tiebreaker:#how to define tiebreaker
+                        if g > current.g:
+                            continue
+                        if (not self.exist(child, self.openlist)) or g < child.g:
+                            child.parent = current
+                            child.g = g
+                            child.heuristic(goal)
+                            if not self.exist(child, self.openlist):
+                                self.openlist.add(child)
+                    elif not self.exist(child, self.closelist):
+                        g = current.g + child.cost(current)
+                        if (not self.exist(child, self.openlist)) or g < child.g:
+                            child.parent = current
+                            child.g = g
+                            child.heuristic(goal)
+                            if not self.exist(child, self.openlist):
+                                self.openlist.add(child)
 
-        self.get_backpointer_list(goal,start)
+        self.get_backpointer_list(goal, start)
 
-    def get_backpointer_list(self,current, start):
+    def get_backpointer_list(self, current, start):
         self.path = [current]
         while True:
             s = current.parent
@@ -119,9 +133,9 @@ class Astar:
         if not self.openlist:
             return -1
         else:
-            return min(self.openlist, key=lambda x: x.g+x.h)
+            return min(self.openlist, key=lambda x: x.g + x.h)
 
-    def exist(self,current,list):
+    def exist(self, current, list):
         for n in list:
             if n.x == current.x and n.y == current.y and n.theta == current.theta:
                 return True
@@ -129,16 +143,16 @@ class Astar:
 
 max_x = 7
 max_y = 6
-state = [[State(j, i,0) for i in range(max_x)] for j in range(max_y)]
+state = [[State(j, i, 0) for i in range(max_x)] for j in range(max_y)]
 plt.title("A star")
-state[1][3].isstart = True # set start point
+state[1][3].isstart = True  # set start point
 state[5][3].isgoal = True  # set goal point
 S = state[1][3]
 G = state[5][3]
-obstaclelist = [ [3, 3], [4, 3]]
+obstaclelist = [[3, 3], [4, 3]]
 startTime = time.time()
 astar = Astar()
-astar.run(S,G)
+astar.run(S, G)
 x = []
 y = []
 for n in astar.path:
@@ -147,14 +161,14 @@ for n in astar.path:
 print("It took %s seconds to run" % (time.time() - startTime))
 
 for n in obstaclelist:
-    state[n[0]][n[1]].isobstacle =True
+    state[n[0]][n[1]].isobstacle = True
 
 plt.xlim((0, max_x))
 plt.ylim((0, max_y))
 
-plt.fill_between( np.array([S.x,S.x+1]), S.y, S.y+1, facecolor='green')
-plt.fill_between( np.array([G.x,G.x+1]), G.y, G.y+1, facecolor='red')
-plt.fill_between( np.array([3,5]), 3, 4, facecolor='black')
+plt.fill_between(np.array([S.x, S.x + 1]), S.y, S.y + 1, facecolor='green')
+plt.fill_between(np.array([G.x, G.x + 1]), G.y, G.y + 1, facecolor='red')
+plt.fill_between(np.array([3, 5]), 3, 4, facecolor='black')
 plt.grid()
-plt.plot(x,y)
+plt.plot(x, y)
 plt.show()
