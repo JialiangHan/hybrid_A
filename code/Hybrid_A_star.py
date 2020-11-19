@@ -25,7 +25,7 @@ class State:
     def cost(self, current):
         if self.isobstacle == True or current.isobstacle == True:
             return 10000
-        elif (math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi:  # drive
+        elif abs(math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi/2:  # drive
             return 1 * self.arclength(current) + self.deltaangle( current)
         else:  # reverse
             return 2 * self.arclength(current) + self.deltaangle(current)
@@ -100,7 +100,7 @@ class Astar:
                     if child.x == current.x and child.y == current.y:  # if child and current are in same cell
                         g = current.g + child.cost(current)
                         # if g + child.h > current.g + current.h + tiebreaker:#how to define tiebreaker
-                        if g > current.g:
+                        if child.cost(current) + child.h > current.h:
                             continue
                         if (not self.exist(child, self.openlist)) or g < child.g:
                             child.parent = current
