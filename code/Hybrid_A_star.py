@@ -13,22 +13,23 @@ class State:
         self.yd = y
         self.thetad = theta
         self.h = 0
-        self.g = 0
+        self.g = 10000
+        self.f = 0
         self.parent = None
         self.children = []
         self.isobstacle = False
         self.isstart = False
         self.isgoal = False
-        self.speed = 1
-        self.deltatheta = 0.2
+        self.speed = 0.8
+        self.deltatheta = 0.6
 
     def cost(self, current):
         if self.isobstacle == True or current.isobstacle == True:
             return 10000
         elif abs(math.atan2(self.yd - current.yd, self.xd - current.yd) - current.thetad) < math.pi/2:  # drive
-            return 1 * self.arclength(current) + self.deltaangle( current)
+            return 1 * self.arclength(current) + 1.5 * self.deltaangle( current)
         else:  # reverse
-            return 2 * self.arclength(current) + self.deltaangle(current)
+            return 2 * self.arclength(current) + 1.5 * self.deltaangle(current)
 
     def arclength(self, current):
         return math.sqrt((self.xd - current.xd) ** 2 + (self.yd - current.yd) ** 2)
@@ -38,6 +39,9 @@ class State:
 
     def heuristic(self, goal):
         self.h = self.arclength(goal) + self.deltaangle(goal)
+
+    def get_f(self):
+        self.f = self.g + self.h
 
     def successor(self, goal):
         steering = ['left', 'straight', 'right']
@@ -99,8 +103,8 @@ class Astar:
                 for child in current.children:
                     if child.x == current.x and child.y == current.y:  # if child and current are in same cell
                         g = current.g + child.cost(current)
-                        # if g + child.h > current.g + current.h + tiebreaker:#how to define tiebreaker
-                        if child.cost(current) + child.h > current.h:
+                        tiebreaker = 0.1
+                        if child.f > current.f + tiebreaker:
                             continue
                         if (not self.exist(child, self.openlist)) or g < child.g:
                             child.parent = current
@@ -117,7 +121,7 @@ class Astar:
                             if not self.exist(child, self.openlist):
                                 self.openlist.add(child)
 
-        self.get_backpointer_list(current, start)
+        self.get_backpointer_list(goal, start)
 
     def get_backpointer_list(self, current, start):
         self.path = [current]
