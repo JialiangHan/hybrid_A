@@ -56,6 +56,7 @@ class State:
         self.astar_f = self.astar_g + self.astar_h
 
     def successor(self, goal):
+        self.children.clear()
         steering = ['left', 'straight', 'right']
         gear = ['drive', 'reverse']
         max_x = 7
@@ -70,6 +71,7 @@ class State:
                     w2 = 1.05# penalty coefficient for turning
                 else:
                     d = 0
+                    w2 = 1
                 if g == 'drive':
                     w = 1
                     w1 = 1
@@ -102,7 +104,7 @@ class State:
         self.y = math.floor(self.yd)
         #self.theta = math.floor(self.thetad)
 
-    def cost(self, current):
+    def ED(self, current):
         return math.sqrt((self.x - current.x) ** 2 + (self.y - current.y) ** 2)
 
     def astarsuccessor(self):
@@ -147,7 +149,7 @@ class HAstar:
                         if (not self.exist(child, self.openlist)) or g < child.g:
                             child.parent = current
                             child.g = g
-                            start.h = self.unconstrained_h(start,goal)
+                            child.h = self.unconstrained_h(child,goal)
                             child.get_f()
                             if self.exist(child, self.openlist):
                                 for n in self.openlist:
@@ -163,7 +165,7 @@ class HAstar:
                         if (not self.exist(child, self.openlist)) or g < child.g:
                             child.parent = current
                             child.g = g
-                            start.h = self.unconstrained_h(start,goal)
+                            child.h = self.unconstrained_h(child,goal)
                             child.get_f()
                             if not self.exist(child, self.openlist):
                                 self.openlist.add(child)
@@ -171,9 +173,12 @@ class HAstar:
         self.get_backpointer_list(goal, start)
 
     def unconstrained_h(self,current,goal):
-        self.astarrun(goal,current)
-        offset = math.sqrt((current.xd - current.x)^2 + (current.yd-current.y)^2)
-        return current.astar_g + offset
+        offset = math.sqrt((current.xd - current.x) ** 2 + (current.yd - current.y) ** 2)
+        if current in self.closelist_astar:
+            return current.astar_g + offset
+        else:
+            self.astarrun(goal,current)
+            return current.astar_g + offset
 
     def get_backpointer_list(self, current, start):
         self.path = [current]
@@ -203,17 +208,14 @@ class HAstar:
                 return True
 
 
-
-
-
-    def astarexist(current, list):
+    def astarexist(self,current, list):
         for n in list:
             if n.x == current.x and n.y == current.y:
                 return True
 
     def astarrun(self, start, goal):
         self.openlist_astar.add(start)
-        start.astar_h = start.cost( goal)
+        start.astar_h = start.ED( goal)
         start.get_f_astar()
         while True:
             current = self.min_state_astar()
@@ -221,7 +223,7 @@ class HAstar:
             self.openlist_astar.remove(current)
             self.closelist_astar.add(current)
 
-            if current.isgoal:
+            if current.x == goal.x and current.y == goal.y:
                 break
             else:
                 for child in current.children:
@@ -230,13 +232,13 @@ class HAstar:
                     if not self.astarexist(child, self.openlist_astar):
                         self.openlist_astar.add(child)
                         child.parent = current
-                        child.astar_g = current.astar_g + child.cost( current)
-                        child.astar_h = child.cost( goal)
+                        child.astar_g = current.astar_g + child.ED( current)
+                        child.astar_h = child.ED( goal)
                         child.get_f_astar()
-                    elif current.astar_g + child.cost( current) < child.astar_g:
+                    elif current.astar_g + child.ED( current) < child.astar_g:
                         child.parent = current
-                        child.astar_g = current.astar_g + child.cost(current)
-                        child.astar_h = child.cost( goal)
+                        child.astar_g = current.astar_g + child.ED(current)
+                        child.astar_h = child.ED( goal)
                         child.get_f_astar()
 
 
