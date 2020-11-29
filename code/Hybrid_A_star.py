@@ -174,8 +174,9 @@ class HAstar:
 
     def unconstrained_h(self,current,goal):
         offset = math.sqrt((current.xd - current.x) ** 2 + (current.yd - current.y) ** 2)
-        if current in self.closelist_astar:
-            return current.astar_g + offset
+        for n in self.closelist_astar:
+            if n.x == current.x and n.y == current.y:
+                return n.astar_g + offset
         else:
             self.astarrun(goal,current)
             return current.astar_g + offset
@@ -214,11 +215,14 @@ class HAstar:
                 return True
 
     def astarrun(self, start, goal):
+        # astar here is to find min g to goal state
         self.openlist_astar.add(start)
         start.astar_h = start.ED( goal)
         start.get_f_astar()
         while True:
             current = self.min_state_astar()
+            # todo: checked, astar algorithm is corret, issue is when rerun astar, openlist_astar
+            #  and closelist is not empty
             current.astarsuccessor()
             self.openlist_astar.remove(current)
             self.closelist_astar.add(current)
