@@ -1,18 +1,15 @@
 import matplotlib.pyplot as plt
 import random
 
-
 class node:
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
-
 class line:
     def __init__(self, a, b):
         self.start = a
         self.end = b
-
 
 class Voronoi:
     def __init__(self, sites, xmin, xmax, ymin, ymax):
@@ -42,7 +39,7 @@ class Voronoi:
             # find point for x=xmax
             yxmax = kb * self.xmax + b
             start = node(self.xmin, yxmin)
-            end = node(self.xmin, yxmax)
+            end = node(self.xmax, yxmax)
             return line(start, end)
         elif a.y == b.y:
             # find point for y=ymin
@@ -56,24 +53,21 @@ class Voronoi:
             k = (b.y - a.y) / (b.x - a.x)
             b = (a.x + b.x) / (2 * k) + (a.y + b.y) / 2
             kb = -1 / k
+            candidates=[]
             # find point for x=xmin
             yxmin = kb * self.xmin + b
+            candidates.append(node(self.xmin,yxmin))
             # find point for x=xmax
             yxmax = kb * self.xmax + b
+            candidates.append(node(self.xmax,yxmax))
             # find point for y=ymin
             xymin = (self.ymin - b) / kb
+            candidates.append(node(xymin,self.ymin))
             # find point for y=ymax
             xymax = (self.ymax - b) / kb
-            if yxmin in range(self.ymin, self.ymax):
-                start = node(self.xmin, yxmin)
-            else:
-                start = node(self.xmax, yxmax)
-            if xymin in range(self.xmin, self.xmax):
-                end = node(xymin, self.ymin)
-            else:
-                end = node(xymax, self.ymax)
-            return line(start, end)
-
+            candidates.append(node(xymax,self.ymax))
+            candidates.sort(key=lambda n:n.x)
+            return line(candidates[1], candidates[2])
 
 def main():
     # specify max range for x and y
@@ -92,13 +86,12 @@ def main():
     V.find_all_biscetor()
     # draw bisector
     for bisector in V.bisetor:
-        plt.plot([bisector.start.x, bisector.end.x], [bisector.start.y, bisector.end.y])
-
+        plt.plot([bisector.start.x, bisector.end.x], [bisector.start.y, bisector.end.y],'black')
+        print([bisector.start.x, bisector.start.y],[bisector.end.x,bisector.end.y])
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
 
     plt.show()
-
 
 if __name__ == '__main__':
     main()
