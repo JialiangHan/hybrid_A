@@ -1,20 +1,24 @@
 import matplotlib.pyplot as plt
 import random
+import math
+
 
 class node:
     def __init__(self, x, y):
         self.x = x
         self.y = y
 
+
 class line:
     def __init__(self, a, b):
         self.start = a
         self.end = b
 
+
 class Voronoi:
     def __init__(self, sites, xmin, xmax, ymin, ymax):
         self.sites = sites
-        self.bisetor = []
+        self.bisector = []
         self.edges = []
         self.vertices = []
         self.xmin = xmin
@@ -22,10 +26,86 @@ class Voronoi:
         self.ymin = ymin
         self.ymax = ymax
 
-    def find_all_biscetor(self):
+    def crossproduct(self, a, b):
+        # a, b are vector(list), this operation is for vector
+        return a[0] * b[1] - a[1] * b[0]
+
+    def if_intersect(self, a, b):
+        # determian whether line a and line b intersect?
+        # two step, use line a as base, then use line b as base
+        # create two vector,
+        va = [a.end.x - a.start.x, a.end.y - a.start.y]
+        vb = [b.end.x - b.start.x, b.end.y - b.start.y]
+        v1 = [b.start.x - a.start.x, b.start.y - a.start.y]
+        v2 = [b.end.x - a.start.x, b.end.y - a.start.y]
+        v3 = [a.start.x - b.start.x, a.start.y - b.start.y]
+        v4 = [a.end.x - b.start.x, a.end.y - b.start.y]
+        if self.crossproduct(vb, v3) * self.crossproduct(vb, v4) < 0 and self.crossproduct(va, v1) * self.crossproduct(va,
+                                                                                                                    v2) < 0:
+            return True
+        else:
+            return False
+
+    def dist(self, a, b):
+        # this is an eulidean distance function, a,b are nodes
+        deltax = b.x - a.x
+        deltay = b.y - a.y
+        return math.sqrt(deltax ** 2 + deltay ** 2)
+
+    def intersection(self, a, b):
+        # this function find intersection point of two lines,line a and line b
+        if a.start.x == a.end.x or b.start.x == b.end.x:
+            if a.start.x == a.end.x:
+                x = a.start.x
+                k2 = (b.end.y - b.start.y) / (b.end.x - b.start.x)
+                b2 = b.start.y + k2 * b.start.x
+                y = k2 * x + b2
+            else:
+                x = b.start.x
+                k1 = (a.end.y - a.start.y) / (a.end.x - a.start.x)
+                b1 = a.start.y + k1 * a.start.x
+                y = k1 * x + b1
+        else:
+            k1 = (a.end.y - a.start.y) / (a.end.x - a.start.x)
+            b1 = a.start.y + k1 * a.start.x
+            k2 = (b.end.y - b.start.y) / (b.end.x - b.start.x)
+            b2 = b.start.y + k2 * b.start.x
+            x = (b2 - b1) / (k1 - k2)
+            y = k1 * x + b1
+        return node(x, y)
+
+    # def find_vertices(self):
+    #     #find all vertices
+    #
+    def find_edges(self):
+        # find all edges
+        candidates = []
+        l = len(self.bisector)
+        for i in range(l):
+            for j in range(i + 1, l):
+                if self.if_intersect(self.bisector[i], self.bisector[j]):
+                    intersection = self.intersection(self.bisector[i], self.bisector[j])
+                    candidates.append(line(self.bisector[i].start, intersection))
+                    candidates.append(line(intersection, self.bisector[i].end))
+                    candidates.append(line(self.bisector[j].start, intersection))
+                    candidates.append(line(intersection, self.bisector[j].end))
+        dstart=[]
+        dend =[]
+        for candidate in candidates:
+            for site in self.sites:
+                dstart.append(self.dist(candidate.start,site))
+                dend.append(self.dist(candidate.end,site))
+            dstart.sort()
+            dend.sort()
+            if dstart[0]==dstart[1] and dend[0]==dstart[1]:
+                self.edges.append(candidate)
+            #todo clear list
+
+
+    def find_all_bisector(self):
         for i in range(len(self.sites)):
             for j in range(i + 1, len(self.sites)):
-                self.bisetor.append(self.get_bisector(self.sites[i], self.sites[j]))
+                self.bisector.append(self.get_bisector(self.sites[i], self.sites[j]))
 
     def get_bisector(self, a, b):
         # this k is for line ab
@@ -53,21 +133,22 @@ class Voronoi:
             k = (b.y - a.y) / (b.x - a.x)
             b = (a.x + b.x) / (2 * k) + (a.y + b.y) / 2
             kb = -1 / k
-            candidates=[]
+            candidates = []
             # find point for x=xmin
             yxmin = kb * self.xmin + b
-            candidates.append(node(self.xmin,yxmin))
+            candidates.append(node(self.xmin, yxmin))
             # find point for x=xmax
             yxmax = kb * self.xmax + b
-            candidates.append(node(self.xmax,yxmax))
+            candidates.append(node(self.xmax, yxmax))
             # find point for y=ymin
             xymin = (self.ymin - b) / kb
-            candidates.append(node(xymin,self.ymin))
+            candidates.append(node(xymin, self.ymin))
             # find point for y=ymax
             xymax = (self.ymax - b) / kb
-            candidates.append(node(xymax,self.ymax))
-            candidates.sort(key=lambda n:n.x)
+            candidates.append(node(xymax, self.ymax))
+            candidates.sort(key=lambda n: n.x)
             return line(candidates[1], candidates[2])
+
 
 def main():
     # specify max range for x and y
@@ -83,15 +164,17 @@ def main():
     for site in sites:
         plt.plot(site.x, site.y, 'bo', ms=5)
     V = Voronoi(sites, xmin, xmax, ymin, ymax)
-    V.find_all_biscetor()
+    V.find_all_bisector()
+    V.find_edges()
     # draw bisector
-    for bisector in V.bisetor:
-        plt.plot([bisector.start.x, bisector.end.x], [bisector.start.y, bisector.end.y],'black')
-        print([bisector.start.x, bisector.start.y],[bisector.end.x,bisector.end.y])
+    for edge in V.edges:
+        plt.plot([edge.start.x, edge.end.x], [edge.start.y, edge.end.y], 'black')
+        print([edge.start.x, edge.start.y], [edge.end.x, edge.end.y])
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
 
     plt.show()
+
 
 if __name__ == '__main__':
     main()
