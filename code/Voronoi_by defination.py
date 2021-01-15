@@ -14,21 +14,34 @@ class node:
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y
 
+
 class line:
     def __init__(self, a, b):
         self.start = a
         self.end = b
+        self.k = 0
+        self.b = 0
+        self.slope()
 
     def __str__(self):
-        return "start: " + str(self.start) + ", end: " + str(self.end)
+        return "start: " + str(self.start) + ", end: " + str(self.end) + ", k: " + str(self.k) + ", b: " + str(self.b)
 
     def __eq__(self, other):
         return (self.start == other.start and self.end == other.end) or (
-                    self.start == other.end and self.end == other.start)
+                self.start == other.end and self.end == other.start)
+
+    def slope(self):
+        if self.start.x == self.end.x:
+            self.k = float("inf")
+            self.b = float("-inf")
+        else:
+            self.k = (self.end.y - self.start.y) / (self.end.x - self.start.x)
+            self.b = self.start.y - self.k * self.start.x
 
 
 class Voronoi:
-    def __init__(self, sites, xmin, xmax, ymin, ymax):
+    def __init__(self, sites, xmin, xmax, ymin, ymax, decimal):
+        self.decimal = decimal
         self.sites = sites
         self.bisector = []
         self.edges = []
@@ -63,8 +76,8 @@ class Voronoi:
         # this is an eulidean distance function, a,b are nodes
         deltax = b.x - a.x
         deltay = b.y - a.y
-        result=math.sqrt(deltax ** 2 + deltay ** 2)
-        result=round(result,5)
+        result = math.sqrt(deltax ** 2 + deltay ** 2)
+        result = round(result, self.decimal)
         return result
 
     def intersection(self, a, b):
@@ -87,7 +100,7 @@ class Voronoi:
             b2 = b.start.y + k2 * b.start.x
             x = (b2 - b1) / (k1 - k2)
             y = k1 * x + b1
-        return node(round(x,5), round(y,5))
+        return node(round(x, self.decimal), round(y, self.decimal))
 
     # def find_vertices(self):
     #     #find all vertices
@@ -100,11 +113,10 @@ class Voronoi:
             for j in range(i + 1, l):
                 if self.if_intersect(self.bisector[i], self.bisector[j]):
                     intersection = self.intersection(self.bisector[i], self.bisector[j])
-                    subcandidates = []
-                    subcandidates.append(line(self.bisector[i].start, intersection))
-                    subcandidates.append(line(intersection, self.bisector[i].end))
-                    subcandidates.append(line(self.bisector[j].start, intersection))
-                    subcandidates.append(line(intersection, self.bisector[j].end))
+                    subcandidates = [line(self.bisector[i].start, intersection),
+                                     line(intersection, self.bisector[i].end),
+                                     line(self.bisector[j].start, intersection),
+                                     line(intersection, self.bisector[j].end)]
                     # this only for one intersection on one line
                     for s in subcandidates:
                         if s not in candidates:
@@ -137,17 +149,17 @@ class Voronoi:
             kb = 0
             b = 1 / 2 * (a.y + b.y)
             # find point for x=xmin
-            yxmin = kb * self.xmin + b
+            yxmin = round(kb * self.xmin + b, self.decimal)
             # find point for x=xmax
-            yxmax = kb * self.xmax + b
+            yxmax = round(kb * self.xmax + b, self.decimal)
             start = node(self.xmin, yxmin)
             end = node(self.xmax, yxmax)
             return line(start, end)
         elif a.y == b.y:
             # find point for y=ymin
-            xymin = 1 / 2 * (a.x + b.x)
+            xymin = round(1 / 2 * (a.x + b.x), self.decimal)
             # find point for y=ymax
-            xymax = 1 / 2 * (a.x + b.x)
+            xymax = round(1 / 2 * (a.x + b.x), self.decimal)
             start = node(xymin, self.ymin)
             end = node(xymax, self.ymax)
             return line(start, end)
@@ -157,16 +169,16 @@ class Voronoi:
             kb = -1 / k
             candidates = []
             # find point for x=xmin
-            yxmin = kb * self.xmin + b
+            yxmin = round(kb * self.xmin + b, self.decimal)
             candidates.append(node(self.xmin, yxmin))
             # find point for x=xmax
-            yxmax = kb * self.xmax + b
+            yxmax = round(kb * self.xmax + b, self.decimal)
             candidates.append(node(self.xmax, yxmax))
             # find point for y=ymin
-            xymin = (self.ymin - b) / kb
+            xymin = round((self.ymin - b) / kb, self.decimal)
             candidates.append(node(xymin, self.ymin))
             # find point for y=ymax
-            xymax = (self.ymax - b) / kb
+            xymax = round((self.ymax - b) / kb, self.decimal)
             candidates.append(node(xymax, self.ymax))
             candidates.sort(key=lambda n: n.x)
             return line(candidates[1], candidates[2])
@@ -176,16 +188,17 @@ def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of sites
-    n = 4
+    n = 3
     sites = []
+    decimal = 4
     # generate sites
-    random.seed(1)
+    random.seed(3)
     for i in range(n):
         sites.append(node(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
     for site in sites:
         plt.plot(site.x, site.y, 'bo', ms=5)
-    V = Voronoi(sites, xmin, xmax, ymin, ymax)
+    V = Voronoi(sites, xmin, xmax, ymin, ymax, decimal)
     V.find_all_bisector()
     V.find_edges()
     # draw bisector
