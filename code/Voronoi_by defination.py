@@ -8,11 +8,23 @@ class node:
         self.x = x
         self.y = y
 
+    def __str__(self):
+        return "x: " + str(self.x) + ", y: " + str(self.y)
+
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
 
 class line:
     def __init__(self, a, b):
         self.start = a
         self.end = b
+
+    def __str__(self):
+        return "start: " + str(self.start) + ", end: " + str(self.end)
+
+    def __eq__(self, other):
+        return (self.start == other.start and self.end == other.end) or (
+                    self.start == other.end and self.end == other.start)
 
 
 class Voronoi:
@@ -40,8 +52,9 @@ class Voronoi:
         v2 = [b.end.x - a.start.x, b.end.y - a.start.y]
         v3 = [a.start.x - b.start.x, a.start.y - b.start.y]
         v4 = [a.end.x - b.start.x, a.end.y - b.start.y]
-        if self.crossproduct(vb, v3) * self.crossproduct(vb, v4) < 0 and self.crossproduct(va, v1) * self.crossproduct(va,
-                                                                                                                    v2) < 0:
+        if self.crossproduct(vb, v3) * self.crossproduct(vb, v4) < 0 and self.crossproduct(va, v1) * self.crossproduct(
+                va,
+                v2) < 0:
             return True
         else:
             return False
@@ -50,7 +63,9 @@ class Voronoi:
         # this is an eulidean distance function, a,b are nodes
         deltax = b.x - a.x
         deltay = b.y - a.y
-        return math.sqrt(deltax ** 2 + deltay ** 2)
+        result=math.sqrt(deltax ** 2 + deltay ** 2)
+        result=round(result,5)
+        return result
 
     def intersection(self, a, b):
         # this function find intersection point of two lines,line a and line b
@@ -72,7 +87,7 @@ class Voronoi:
             b2 = b.start.y + k2 * b.start.x
             x = (b2 - b1) / (k1 - k2)
             y = k1 * x + b1
-        return node(x, y)
+        return node(round(x,5), round(y,5))
 
     # def find_vertices(self):
     #     #find all vertices
@@ -85,22 +100,29 @@ class Voronoi:
             for j in range(i + 1, l):
                 if self.if_intersect(self.bisector[i], self.bisector[j]):
                     intersection = self.intersection(self.bisector[i], self.bisector[j])
-                    candidates.append(line(self.bisector[i].start, intersection))
-                    candidates.append(line(intersection, self.bisector[i].end))
-                    candidates.append(line(self.bisector[j].start, intersection))
-                    candidates.append(line(intersection, self.bisector[j].end))
-        dstart=[]
-        dend =[]
+                    subcandidates = []
+                    subcandidates.append(line(self.bisector[i].start, intersection))
+                    subcandidates.append(line(intersection, self.bisector[i].end))
+                    subcandidates.append(line(self.bisector[j].start, intersection))
+                    subcandidates.append(line(intersection, self.bisector[j].end))
+                    # this only for one intersection on one line
+                    for s in subcandidates:
+                        if s not in candidates:
+                            candidates.append(s)
+
+                    # todo: candidates only works when two lines cross, when three lines cross and two or more intersection pop up, wrong
+        dstart = []
+        dend = []
         for candidate in candidates:
             for site in self.sites:
-                dstart.append(self.dist(candidate.start,site))
-                dend.append(self.dist(candidate.end,site))
+                dstart.append(self.dist(candidate.start, site))
+                dend.append(self.dist(candidate.end, site))
             dstart.sort()
             dend.sort()
-            if dstart[0]==dstart[1] and dend[0]==dstart[1]:
+            if dstart[0] == dstart[1] and dend[0] == dend[1]:
                 self.edges.append(candidate)
-            #todo clear list
-
+            dstart = []
+            dend = []
 
     def find_all_bisector(self):
         for i in range(len(self.sites)):
@@ -154,7 +176,7 @@ def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of sites
-    n = 3
+    n = 4
     sites = []
     # generate sites
     random.seed(1)
