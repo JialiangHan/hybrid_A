@@ -94,17 +94,10 @@ class Voronoi:
                 b1 = a.start.y + k1 * a.start.x
                 y = k1 * x + b1
         else:
-            k1 = (a.end.y - a.start.y) / (a.end.x - a.start.x)
-            b1 = a.start.y + k1 * a.start.x
-            k2 = (b.end.y - b.start.y) / (b.end.x - b.start.x)
-            b2 = b.start.y + k2 * b.start.x
-            x = (b2 - b1) / (k1 - k2)
-            y = k1 * x + b1
+            x = round((b.b - a.b) / (a.k - b.k),2)
+            y = round(a.k * x + a.b,2)
         return node(x, y)
 
-    # def find_vertices(self):
-    #     #find all vertices
-    #
     def find_edges(self):
         # find all edges
         candidates = []
@@ -122,13 +115,13 @@ class Voronoi:
             intersection.sort(key=lambda n: n.x)
             n = len(intersection)
             if n == 0:
-                candidates = [line(self.bisector[i].start, self.bisector[j].end)]
+                candidates.append([line(self.bisector[i].start, self.bisector[j].end)])
             elif n == 1:
-                candidates = [line(self.bisector[i].start, intersection[0]),
-                              line(intersection[0], self.bisector[j].end)]
+                candidates.append(line(self.bisector[i].start, intersection[0]))
+                candidates.append(line(intersection[0], self.bisector[i].end))
             else:
-                candidates = [line(self.bisector[i].start, intersection[0]),
-                              line(intersection[-1], self.bisector[j].end)]
+                candidates.append(line(self.bisector[i].start, intersection[0]))
+                candidates.append(line(intersection[-1], self.bisector[i].end))
                 for i in range(n - 1):
                     candidates.append(line(intersection[i], intersection[i + 1]))
                     # # this only for one intersection on one line
@@ -144,7 +137,7 @@ class Voronoi:
                 dend.append(self.dist(candidate.end, site))
             dstart.sort()
             dend.sort()
-            if dstart[0] == dstart[1] and dend[0] == dend[1]:
+            if abs(dstart[0] - dstart[1])<=0.01 and abs(dend[0] - dend[1])<=0.01:
                 self.edges.append(candidate)
             dstart = []
             dend = []
@@ -203,9 +196,9 @@ def main():
     # specify number of sites
     n = 3
     sites = []
-    decimal = 4
+    decimal = 2
     # generate sites
-    random.seed(1)
+    random.seed(4)
     for i in range(n):
         sites.append(node(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
@@ -215,6 +208,8 @@ def main():
     V.find_all_bisector()
     V.find_edges()
     # draw bisector
+    # for bisector in V.bisector:
+    #     plt.plot([bisector.start.x, bisector.end.x], [bisector.start.y, bisector.end.y], 'black')
     for edge in V.edges:
         plt.plot([edge.start.x, edge.end.x], [edge.start.y, edge.end.y], 'black')
         print([edge.start.x, edge.start.y], [edge.end.x, edge.end.y])
