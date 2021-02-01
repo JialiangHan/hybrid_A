@@ -6,9 +6,9 @@ import bisect
 
 
 class PointType(Enum):
-    upper_end_point = 1
+    upper_end_point = 3
     intersection = 2
-    lower_end_point = 3
+    lower_end_point = 1
 
 
 class Point:
@@ -29,7 +29,7 @@ class Point:
             else:
                 return self.x > other.x
         else:
-            self.y > other.y
+            return self.y > other.y
 
     def __lt__(self, other):
         if self.y == other.y:
@@ -38,7 +38,7 @@ class Point:
             else:
                 return self.x < other.x
         else:
-            self.y < other.y
+            return self.y < other.y
 
 
 class Segment:
@@ -59,14 +59,14 @@ class Segment:
         self.slope()
 
     def __gt__(self, other):
-        if self.upper_end_point.x == other.upper_end_point.x:
-            return self.upper_end_point.y > other.upper_end_point.y
-        return self.upper_end_point.x > other.upper_end_point.x
+        if self.lower_end_point.x == other.lower_end_point.x:
+            return self.lower_end_point.y > other.lower_end_point.y
+        return self.lower_end_point.x > other.lower_end_point.x
 
     def __lt__(self, other):
-        if self.upper_end_point.x == other.upper_end_point.x:
-            return self.upper_end_point.y < other.upper_end_point.y
-        return self.upper_end_point.x < other.upper_end_point.x
+        if self.lower_end_point.x == other.lower_end_point.x:
+            return self.lower_end_point.y < other.lower_end_point.y
+        return self.lower_end_point.x < other.lower_end_point.x
 
     def slope(self):
         if self.upper_end_point.x == self.lower_end_point.x:
@@ -77,9 +77,6 @@ class Segment:
                     self.lower_end_point.x - self.upper_end_point.x)
             self.b = self.upper_end_point.y - self.k * self.upper_end_point.x
 
-    def value_at_y(self, y):
-        return (y - self.b) / self.k
-
     def compute_intersection(self, line2):
         # x = (b2-b1)/(k1-k2),y=k1*x+b1
         line1 = self
@@ -89,6 +86,9 @@ class Segment:
         y = line1.k * x + line1.b
         if line1.lower_end_point.y < y < line1.upper_end_point.y and line2.lower_end_point.y < y < line2.upper_end_point.y:
             return Point(x, y, PointType.intersection, line1=self, line2=line2)
+
+    def __str__(self):
+        return "l: " + str(self.lower_end_point) + ", u: " + str(self.upper_end_point)
 
 
 class status:
@@ -110,27 +110,28 @@ class status:
         if 0 < index < len(self.status) - 1:
             inter1 = segment.compute_intersection(self.status[index - 1])
             inter2 = segment.compute_intersection(self.status[index + 1])
-            if inter1.y <= self.sweepline and inter2.y <= self.sweepline:
+            if inter1.y >= self.sweepline and inter2.y >= self.sweepline:
                 return inter1, inter2
-            elif inter1.y <= self.sweepline < inter2.y:
+            elif inter1.y >= self.sweepline > inter2.y:
                 return inter1, None
-            elif inter2.y <= self.sweepline < inter1.y:
+            elif inter2.y >= self.sweepline > inter1.y:
                 return inter2, None
             else:
-                return None, None
+                return (None, None)
         elif index == 0:
             if len(self.status) == 1:
                 return None, None
             else:
                 inter1 = segment.compute_intersection(self.status[index + 1])
-                if inter1.y <= self.sweepline:
-                    return inter1, None
-                else:
-                    return None, None
+                if inter1 is not None:
+                    if inter1.y >= self.sweepline:
+                        return inter1, None
+                    else:
+                        return None, None
         else:
             inter1 = segment.compute_intersection(self.status[index - 1])
-            if inter1 != None:
-                if inter1.y <= self.sweepline:
+            if inter1 is not None:
+                if inter1.y >= self.sweepline:
                     return inter1, None
                 else:
                     return None, None
@@ -140,7 +141,7 @@ class status:
         index = self.status.index(segment)
         if 0 < index < len(self.status) - 1:
             inter1 = self.status[index - 1].compute_intersection(self.status[index + 1])
-            if inter1.y <= self.sweepline:
+            if inter1.y >= self.sweepline:
                 result = inter1
             else:
                 result = None
@@ -152,18 +153,57 @@ class status:
         index1 = self.status.index(segment1)
         index2 = self.status.index(segment2)
         self.swap(index1, index2)
-        if index1 < index2:
-            inter1 = segment2.compute_intersection(self.status[index1 - 1])
-            inter2 = segment1.compuete_intersection(self.status[index2 + 1])
+        if index1 == 0:
+            try:
+                inter1 = segment1.compute_intersection(self.status[index2 + 1])
+                inter2 = None
+            except IndexError:
+                inter1 = None
+                inter2 = None
+        elif index2 == 0:
+            try:
+                inter1 = segment2.compute_intersection(self.status[index1 + 1])
+                inter2 = None
+            except IndexError:
+                inter1 = None
+                inter2 = None
+        elif 0 < index1 < index2:
+            try:
+                inter1 = segment2.compute_intersection(self.status[index1 - 1])
+            except IndexError:
+                inter1 = None
+            try:
+                inter2 = segment1.compute_intersection(self.status[index2 + 1])
+            except IndexError:
+                inter2 = None
         else:
-            inter1 = segment2.compute_intersection(self.status[index1 + 1])
-            inter2 = segment1.compuete_intersection(self.status[index2 - 1])
-        if inter1.y <= self.sweepline and inter2.y <= self.sweepline:
-            return inter1, inter2
-        elif inter1.y <= self.sweepline < inter2.y:
-            return inter1, None
-        elif inter2.y <= self.sweepline < inter1.y:
-            return inter2, None
+            try:
+                inter1 = segment2.compute_intersection(self.status[index1 + 1])
+            except IndexError:
+                inter1 = None
+            try:
+                inter2 = segment1.compute_intersection(self.status[index2 - 1])
+            except IndexError:
+                inter2 = None
+        if inter1 is not None and inter2 is not None:
+            if inter1.y >= self.sweepline and inter2.y >= self.sweepline:
+                return inter1, inter2
+            elif inter1.y >= self.sweepline > inter2.y:
+                return inter1, None
+            elif inter2.y >= self.sweepline > inter1.y:
+                return inter2, None
+            else:
+                return None, None
+        elif inter1 is None and inter2 is not None:
+            if inter2.y >= self.sweepline:
+                return inter1, inter2
+            else:
+                return inter1, None
+        elif inter1 is not None and inter2 is None:
+            if inter1.y >= self.sweepline:
+                return inter1, inter2
+            else:
+                return None, inter2
         else:
             return None, None
 
@@ -182,7 +222,7 @@ class event_queue:
         heapq.heapify(self.h)
 
     def push(self, point):
-        if point == None:
+        if point is None:
             return
         else:
             heapq.heappush(self.h, point)
@@ -212,11 +252,11 @@ class PlaneSweep:
 
     def process_event(self, event):
         sweepline = event.y
-        if event.PointType == PointType.upper_end_point:
+        if event.PointType == PointType.lower_end_point:
             inter1, inter2 = self.status.add_check_intersection(event.line1, sweepline)
             self.event_queue.push(inter1)
             self.event_queue.push(inter2)
-        elif event.PointType == PointType.lower_end_point:
+        elif event.PointType == PointType.upper_end_point:
             inter1 = self.status.delete_check_intersection(event, sweepline)
             self.event_queue.push(inter1)
         else:
@@ -233,7 +273,7 @@ def main():
     points = []
     segments = []
     # generate sites
-    random.seed(1)
+    random.seed(4)
     for i in range(n):
         points.append(Point(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # generate segments
