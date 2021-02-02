@@ -145,6 +145,8 @@ class status:
                 result = inter1
             else:
                 result = None
+        else:
+            result=None
         self.status.remove(segment)
         return result
 
@@ -257,7 +259,7 @@ class PlaneSweep:
             self.event_queue.push(inter1)
             self.event_queue.push(inter2)
         elif event.PointType == PointType.upper_end_point:
-            inter1 = self.status.delete_check_intersection(event, sweepline)
+            inter1 = self.status.delete_check_intersection(event.line1, sweepline)
             self.event_queue.push(inter1)
         else:
             inter1, inter2 = self.status.swap_check_intersection(event.line1, event.line2, sweepline)
@@ -269,7 +271,7 @@ def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of points
-    n = 10
+    n = 6
     points = []
     segments = []
     # generate sites
