@@ -146,7 +146,7 @@ class status:
             else:
                 result = None
         else:
-            result=None
+            result = None
         self.status.remove(segment)
         return result
 
@@ -265,13 +265,14 @@ class PlaneSweep:
             inter1, inter2 = self.status.swap_check_intersection(event.line1, event.line2, sweepline)
             self.event_queue.push(inter1)
             self.event_queue.push(inter2)
+            # TODO errror happens when push inter1 if inter1 is already in event queue
 
-
+#TODO
 def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of points
-    n = 6
+    n = 8
     points = []
     segments = []
     # generate sites
