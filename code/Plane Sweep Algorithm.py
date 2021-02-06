@@ -232,6 +232,15 @@ class event_queue:
     def pop(self):
         return heapq.heappop(self.h)
 
+    def unique_pop(self, prev):
+        if prev == None:
+            return True, self.pop()
+        else:
+            current = self.pop()
+            while prev == current:
+                current = self.pop()
+            return True, current
+
     def size(self):
         return len(self.h)
 
@@ -244,11 +253,15 @@ class PlaneSweep:
         self.intersection = []
 
     def run(self):
+        prev = None
         while self.event_queue.size() > 0:
-            current_event = self.event_queue.pop()
+            valid, current_event = self.event_queue.unique_pop(prev)
+            if not valid:
+                continue
             if current_event.PointType == PointType.intersection:
                 self.intersection.append(current_event)
             self.process_event(current_event)
+            prev = current_event
 
         return self.intersection
 
@@ -267,7 +280,8 @@ class PlaneSweep:
             self.event_queue.push(inter2)
             # TODO errror happens when push inter1 if inter1 is already in event queue
 
-#TODO
+
+# TODO
 def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
