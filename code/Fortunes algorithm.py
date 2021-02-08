@@ -4,6 +4,7 @@ import heapq
 import itertools
 import matplotlib.pyplot as plt
 
+
 class Point:
     x = 0.0
     y = 0.0
@@ -11,8 +12,10 @@ class Point:
     def __init__(self, x, y):
         self.x = x
         self.y = y
+
     def __str__(self):
         return "x: " + str(self.x) + ", y: " + str(self.y)
+
 
 class Event:
     x = 0.0
@@ -55,7 +58,8 @@ class Segment:
         self.done = False
 
     def finish(self, p):
-        if self.done: return
+        if self.done:
+            return
         self.end = p
         self.done = True
 
@@ -68,7 +72,8 @@ class PriorityQueue:
 
     def push(self, item):
         # check for duplicate
-        if item in self.entry_finder: return
+        if item in self.entry_finder:
+            return
         count = next(self.counter)
         # use x-coordinate as a primary key (heapq in python is min-heap)
         entry = [item.x, count, item]
@@ -101,7 +106,7 @@ class PriorityQueue:
 
 
 class Voronoi:
-    def __init__(self, points, xmin, xmax, ymin,ymax):
+    def __init__(self, points, xmin, xmax, ymin, ymax):
         self.output = []  # list of line segment
         self.arc = None  # binary tree for parabola arcs
 
@@ -164,12 +169,16 @@ class Voronoi:
                 a.pnext.s0 = s
 
             # finish the edges before and after a
-            if a.s0 is not None: a.s0.finish(e.p)
-            if a.s1 is not None: a.s1.finish(e.p)
+            if a.s0 is not None:
+                a.s0.finish(e.p)
+            if a.s1 is not None:
+                a.s1.finish(e.p)
 
             # recheck circle events on either side of p
-            if a.pprev is not None: self.check_circle_event(a.pprev, e.x)
-            if a.pnext is not None: self.check_circle_event(a.pnext, e.x)
+            if a.pprev is not None:
+                self.check_circle_event(a.pprev, e.x)
+            if a.pnext is not None:
+                self.check_circle_event(a.pnext, e.x)
 
     def arc_insert(self, p):
         if self.arc is None:
@@ -200,8 +209,6 @@ class Voronoi:
                     self.output.append(seg)
                     i.pprev.s1 = i.s0 = seg
 
-                    seg = Segment(z)
-                    self.output.append(seg)
                     i.pnext.s0 = i.s1 = seg
 
                     # check for new circle events around the new arc
@@ -228,12 +235,12 @@ class Voronoi:
             i.s1 = i.pnext.s0 = seg
             self.output.append(seg)
 
-    def check_circle_event(self, i,x0):
+    def check_circle_event(self, i, x0):
         # look for a new circle event for arc i
         if (i.e is not None) and (i.e.x != self.x0):
             i.e.valid = False
         i.e = None
-        #circle event only happens when three arcs degenerated to two arcs
+        # circle event only happens when three arcs degenerated to two arcs
         if (i.pprev is None) or (i.pnext is None):
             return
 
@@ -279,12 +286,13 @@ class Voronoi:
 
         a = 0.0
         b = 0.0
-
+        # check if p intersect with i.previous
         if i.pprev is not None:
             a = (self.intersection(i.pprev.p, i.p, 1.0 * p.x)).y
+        # check if p intersect with i.next
         if i.pnext is not None:
             b = (self.intersection(i.p, i.pnext.p, 1.0 * p.x)).y
-
+        # 如果previous和next都不存在 或者 两个交点的的y???不是x吗？到底是从x扫描还是y扫描？，计算arc与直线的交点
         if ((i.pprev is None) or (a <= p.y)) and ((i.pnext is None) or (p.y <= b)):
             py = p.y
             px = 1.0 * (i.p.x ** 2 + (i.p.y - py) ** 2 - p.x ** 2) / (2 * i.p.x - 2 * p.x)
@@ -292,39 +300,42 @@ class Voronoi:
             return True, res
         return False, None
 
-    def intersection(self, p0, p1, l):
+    def intersection(self, p0, p1, L):
         # get the intersection of two parabolas
+        # p0,p1 are points, but they represent two arcs
+        # L are the location of sweep line
         p = p0
         if p0.x == p1.x:
             py = (p0.y + p1.y) / 2.0
-        elif p1.x == l:
+        elif p1.x == L:
             py = p1.y
-        elif p0.x == l:
+        elif p0.x == L:
             py = p0.y
             p = p1
         else:
             # use quadratic formula
-            z0 = 2.0 * (p0.x - l)
-            z1 = 2.0 * (p1.x - l)
+            z0 = 2.0 * (p0.x - L)
+            z1 = 2.0 * (p1.x - L)
 
-            a = 1.0 / z0 - 1.0 / z1;
+            a = 1.0 / z0 - 1.0 / z1
             b = -2.0 * (p0.y / z0 - p1.y / z1)
-            c = 1.0 * (p0.y ** 2 + p0.x ** 2 - l ** 2) / z0 - 1.0 * (p1.y ** 2 + p1.x ** 2 - l ** 2) / z1
+            c = 1.0 * (p0.y ** 2 + p0.x ** 2 - L ** 2) / z0 - 1.0 * (p1.y ** 2 + p1.x ** 2 - L ** 2) / z1
 
             py = 1.0 * (-b - math.sqrt(b * b - 4 * a * c)) / (2 * a)
 
-        px = 1.0 * (p.x ** 2 + (p.y - py) ** 2 - l ** 2) / (2 * p.x - 2 * l)
+        px = 1.0 * (p.x ** 2 + (p.y - py) ** 2 - L ** 2) / (2 * p.x - 2 * L)
         res = Point(px, py)
         return res
 
     def finish_edges(self):
-        l = self.x1 + (self.x1 - self.x0) + (self.y1 - self.y0)
+        L = self.x1 + (self.x1 - self.x0) + (self.y1 - self.y0)
         i = self.arc
         while i.pnext is not None:
             if i.s1 is not None:
-                p = self.intersection(i.p, i.pnext.p, l * 2.0)
+                p = self.intersection(i.p, i.pnext.p, L * 2.0)
                 i.s1.finish(p)
             i = i.pnext
+
 
 def main():
     # specify max range for x and y
@@ -339,12 +350,11 @@ def main():
     # draw sites
     for site in sites:
         plt.plot(site.x, site.y, 'bo', ms=5)
-    V = Voronoi(sites, xmin, xmax,ymin,ymax)
+    V = Voronoi(sites, xmin, xmax, ymin, ymax)
     V.process()
     # draw edges
     for edge in V.output:
         plt.plot([edge.start.x, edge.end.x], [edge.start.y, edge.end.y], 'black')
-        #print([edge.start.x, edge.start.y], [edge.end.x, edge.end.y])
     plt.xlim(xmin, xmax)
     plt.ylim(ymin, ymax)
     plt.show()
