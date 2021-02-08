@@ -221,7 +221,7 @@ class Voronoi:
 
             # insert new segment between p and i
             x = self.x0
-            y = (i.pnext.p.y + i.p.y) / 2.0;
+            y = (i.pnext.p.y + i.p.y) / 2.0
             start = Point(x, y)
 
             seg = Segment(start)
@@ -233,8 +233,9 @@ class Voronoi:
         if (i.e is not None) and (i.e.x != self.x0):
             i.e.valid = False
         i.e = None
-
-        if (i.pprev is None) or (i.pnext is None): return
+        #circle event only happens when three arcs degenerated to two arcs
+        if (i.pprev is None) or (i.pnext is None):
+            return
 
         flag, x, o = self.circle(i.pprev.p, i.p, i.pnext.p)
         if flag and (x > self.x0):
@@ -243,7 +244,9 @@ class Voronoi:
 
     def circle(self, a, b, c):
         # check if bc is a "right turn" from ab
-        if ((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) > 0: return False, None, None
+        # a, b, c are points
+        if ((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) > 0:
+            return False, None, None
 
         # Joseph O'Rourke, Computational Geometry in C (2nd ed.) p.189
         A = b.x - a.x
@@ -254,7 +257,8 @@ class Voronoi:
         F = C * (a.x + c.x) + D * (a.y + c.y)
         G = 2 * (A * (c.y - b.y) - B * (c.x - b.x))
 
-        if G == 0: return False, None, None  # Points are co-linear
+        if G == 0:
+            return False, None, None  # Points are co-linear
 
         # point o is the center of the circle
         ox = 1.0 * (D * E - B * F) / G
@@ -268,8 +272,10 @@ class Voronoi:
 
     def intersect(self, p, i):
         # check whether a new parabola at point p intersect with arc i
-        if i is None: return False, None
-        if i.p.x == p.x: return False, None
+        if i is None:
+            return False, None
+        if i.p.x == p.x:
+            return False, None
 
         a = 0.0
         b = 0.0
@@ -327,7 +333,7 @@ def main():
     n = 3
     sites = []
     # generate sites
-    random.seed(1)
+    random.seed(5)
     for i in range(n):
         sites.append(Point(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
