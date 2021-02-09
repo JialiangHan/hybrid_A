@@ -187,10 +187,10 @@ class Voronoi:
             # find the current arcs at p.y
             i = self.arc
             while i is not None:
-                flag, z = self.intersect(p, i)
+                flag, z = self.if_intersect(p, i)
                 if flag:
                     # new parabola intersects arc i
-                    flag, zz = self.intersect(p, i.pnext)
+                    flag, zz = self.if_intersect(p, i.pnext)
                     if (i.pnext is not None) and (not flag):
                         i.pnext.pprev = Arc(i.p, i, i.pnext)
                         i.pnext = i.pnext.pprev
@@ -211,7 +211,7 @@ class Voronoi:
 
                     i.pnext.s0 = i.s1 = seg
 
-                    # check for new circle events around the new arc
+                    # check for new circle events around the new arc, prev and next should also be checked
                     self.check_circle_event(i, p.x)
                     self.check_circle_event(i.pprev, p.x)
                     self.check_circle_event(i.pnext, p.x)
@@ -237,6 +237,7 @@ class Voronoi:
 
     def check_circle_event(self, i, x0):
         # look for a new circle event for arc i
+        # x0 should be sweep line location
         if (i.e is not None) and (i.e.x != self.x0):
             i.e.valid = False
         i.e = None
@@ -277,22 +278,20 @@ class Voronoi:
 
         return True, x, o
 
-    def intersect(self, p, i):
+    def if_intersect(self, p, i):
         # check whether a new parabola at point p intersect with arc i
         if i is None:
             return False, None
         if i.p.x == p.x:
             return False, None
 
-        a = 0.0
-        b = 0.0
-        # check if p intersect with i.previous
+        # if i.previous exist, get y coordinate of the intersection point between previous arc and line(cross point P and parallel to x axis)
         if i.pprev is not None:
             a = (self.intersection(i.pprev.p, i.p, 1.0 * p.x)).y
-        # check if p intersect with i.next
+        # if i.next exist, get y coordinate of the intersection point between next arc and line(cross point P and parallel to x axis)
         if i.pnext is not None:
             b = (self.intersection(i.p, i.pnext.p, 1.0 * p.x)).y
-        # 如果previous和next都不存在 或者 两个交点的的y???不是x吗？到底是从x扫描还是y扫描？，计算arc与直线的交点
+        # 如果previous和next都不存在 或者 p点在 arc与prev的交点,arc与next交点之间(从y值看) ,则, 从p点做x轴的平行线与arc相交
         if ((i.pprev is None) or (a <= p.y)) and ((i.pnext is None) or (p.y <= b)):
             py = p.y
             px = 1.0 * (i.p.x ** 2 + (i.p.y - py) ** 2 - p.x ** 2) / (2 * i.p.x - 2 * p.x)
@@ -301,6 +300,7 @@ class Voronoi:
         return False, None
 
     def intersection(self, p0, p1, L):
+
         # get the intersection of two parabolas
         # p0,p1 are points, but they represent two arcs
         # L are the location of sweep line
@@ -344,7 +344,7 @@ def main():
     n = 3
     sites = []
     # generate sites
-    random.seed(5)
+    random.seed(3)
     for i in range(n):
         sites.append(Point(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
