@@ -80,25 +80,25 @@ class PriorityQueue:
         self.entry_finder[item] = entry
         heapq.heappush(self.pq, entry)
 
-    def remove_entry(self, item):
-        entry = self.entry_finder.pop(item)
-        entry[-1] = 'Removed'
+    # def remove_entry(self, item):
+    #     entry = self.entry_finder.pop(item)
+    #     entry[-1] = 'Removed'
 
     def pop(self):
         while self.pq:
             priority, count, item = heapq.heappop(self.pq)
-            if item is not 'Removed':
-                del self.entry_finder[item]
-                return item
+            # if item is not 'Removed':
+            del self.entry_finder[item]
+            return item
         raise KeyError('pop from an empty priority queue')
 
     def top(self):
         while self.pq:
             priority, count, item = heapq.heappop(self.pq)
-            if item is not 'Removed':
-                del self.entry_finder[item]
-                self.push(item)
-                return item
+            # if item is not 'Removed':
+            del self.entry_finder[item]
+            self.push(item)
+            return item
         raise KeyError('top from an empty priority queue')
 
     def empty(self):
@@ -195,7 +195,7 @@ class Voronoi:
                         i.pnext.pprev = Arc(i.p, i, i.pnext)
                         i.pnext = i.pnext.pprev
                     else:
-                        i.pnext = Arc(i.p, i)
+                        i.pnext = Arc(i.p, i)# next arc is p for now
                     i.pnext.s1 = i.s1
 
                     # add p between i and i.pnext
@@ -204,11 +204,13 @@ class Voronoi:
 
                     i = i.pnext  # now i points to the new arc
 
-                    # add new half-edges connected to i's endpoints
+                    # add two new half-edges connected to i's endpoints
                     seg = Segment(z)
                     self.output.append(seg)
                     i.pprev.s1 = i.s0 = seg
 
+                    seg = Segment(z)
+                    self.output.append(seg)
                     i.pnext.s0 = i.s1 = seg
 
                     # check for new circle events around the new arc, prev and next should also be checked
@@ -246,7 +248,8 @@ class Voronoi:
             return
 
         flag, x, o = self.circle(i.pprev.p, i.p, i.pnext.p)
-        if flag and (x > self.x0):
+        #if flag and (x > self.x0):
+        if flag and (x > x0):
             i.e = Event(x, o, i)
             self.event.push(i.e)
 
@@ -275,7 +278,8 @@ class Voronoi:
         # o.x plus radius equals max x coord
         x = ox + math.sqrt((a.x - ox) ** 2 + (a.y - oy) ** 2)
         o = Point(ox, oy)
-
+        # o: center of circle
+        # x: max x coord of circle
         return True, x, o
 
     def if_intersect(self, p, i):
@@ -285,10 +289,10 @@ class Voronoi:
         if i.p.x == p.x:
             return False, None
 
-        # if i.previous exist, get y coordinate of the intersection point between previous arc and line(cross point P and parallel to x axis)
+        # if i.previous exist, get y coordinate of the intersection point between i.p and i.prrev
         if i.pprev is not None:
             a = (self.intersection(i.pprev.p, i.p, 1.0 * p.x)).y
-        # if i.next exist, get y coordinate of the intersection point between next arc and line(cross point P and parallel to x axis)
+        # if i.next exist, get y coordinate of the intersection point between i.p and i.next
         if i.pnext is not None:
             b = (self.intersection(i.p, i.pnext.p, 1.0 * p.x)).y
         # 如果previous和next都不存在 或者 p点在 arc与prev的交点,arc与next交点之间(从y值看) ,则, 从p点做x轴的平行线与arc相交
@@ -313,7 +317,7 @@ class Voronoi:
             py = p0.y
             p = p1
         else:
-            # use quadratic formula
+            # use quadratic formula self.x1 - self.x0
             z0 = 2.0 * (p0.x - L)
             z1 = 2.0 * (p1.x - L)
 
@@ -341,10 +345,10 @@ def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of sites
-    n = 3
+    n = 4
     sites = []
     # generate sites
-    random.seed(3)
+    random.seed(4)
     for i in range(n):
         sites.append(Point(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
