@@ -197,7 +197,6 @@ class Voronoi:
                     else:
                         i.pnext = Arc(i.p, i)# next arc is p for now
                     i.pnext.s1 = i.s1
-
                     # add p between i and i.pnext
                     i.pnext.pprev = Arc(p, i, i.pnext)
                     i.pnext = i.pnext.pprev
@@ -345,10 +344,10 @@ def main():
     # specify max range for x and y
     xmin, xmax, ymin, ymax = 0, 10, 0, 10
     # specify number of sites
-    n = 4
+    n = 10
     sites = []
     # generate sites
-    random.seed(4)
+    #random.seed(4)
     for i in range(n):
         sites.append(Point(random.randint(xmin + 1, xmax - 1), random.randint(ymin + 1, ymax - 1)))
     # draw sites
